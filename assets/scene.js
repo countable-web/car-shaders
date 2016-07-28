@@ -17,11 +17,11 @@ function getMaterial(color) {
         },
         paintColor2: {
             type: "c",
-            value: new THREE.Color(color)
+            value: new THREE.Color(0x888888)
         },
         paintColor3: {
             type: "c",
-            value: new THREE.Color(0xFFFF00)
+            value: new THREE.Color(0x222222)
         },
         normalMap: {
             type: "t",
@@ -35,7 +35,7 @@ function getMaterial(color) {
         },
         glossLevel: {
             type: "f",
-            value: 1.0,
+            value: 0.5,
             min: 0.0,
             max: 5.0
         },
@@ -137,7 +137,6 @@ function init() {
     scene.add(sky);
 
     controls = new THREE.TrackballControls(camera, renderer.domElement);
-    //controls.addEventListener('change', render);
 
     var material = getMaterial(0xFF0000);
 
@@ -155,13 +154,9 @@ function init() {
 
     var geometry = new THREE.SphereGeometry(70, 32, 32);
     mesh = new THREE.Mesh(geometry, material);
+    mesh.material = getMaterial(0xFF0000)
     scene.add(mesh);
     
-    setTimeout(function(){
-        mesh.material = getMaterial(0xFF0000)
-        //render();
-    },1000);
-
     window.addEventListener('resize', onWindowResize, false);
 
 }
@@ -171,13 +166,12 @@ function onWindowResize() {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
     controls.handleResize();
-    //render();
 }
 
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
-    //render();
+    render();
 }
 
 function render() {
