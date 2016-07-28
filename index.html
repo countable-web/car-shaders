@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>car materials</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				background:#000;
+				color:#fff;
+				padding:0;
+				margin:0;
+				overflow:hidden;
+				font-family:georgia;
+				text-align:center;
+			}
+			canvas { pointer-events:none; z-index:10; position:relative; }
+
+			#d { position:absolute; width: 100%; text-align:center; margin:1em 0 -4.5em 0; z-index:1000; }
+
+			.bwrap { margin:0.5em 0 0 0 }
+
+		  .chooser {
+		    position: fixed;
+		    bottom: 20%;
+		    left: 20%;
+		    right: 20%;
+		    height: 60px;
+		    z-index: 100;
+		    text-align: center;
+		    transition: all 1s;
+		  }
+
+		  .chooser .mat {
+		    width: 20px;
+		    height: 20px;
+		    border-radius: 50%;
+		    display: inline-block;
+		    opacity: 0;
+		    transition: all 1s;
+		    margin: 20px;
+		    border: 3px solid #AAA;
+		    box-shadow: 1px 3px 10px rgba(0,0,0,0.6);
+		  }
+		  .chooser:hover .mat, .chooser .active {
+		  	opacity: 1;
+		  }
+		  .chooser:hover {
+		  	transform: scale(1.2);
+		  }
+		  .chooser .active {
+		    border: 3px solid white;
+		  }
+		  .orange {
+		  	background-color: #ff6600;
+		  }
+		  .black {
+		  	background-color: black;
+		  }
+		  .blue {
+		  	background-color: #003399;
+		  }
+
+			#oldie { background:rgb(50,0,0) !important; color:#fff !important; margin-top:7em!important }
+		</style>
+	</head>
+
+	<body>
+		<div id="d">
+
+			<div id="buttons_materials" class="bwrap chooser">
+				<div class="mat orange active" onclick="setMaterial('orange', event)"></div>
+				<div class="mat black" onclick="setMaterial('black', event)"></div>
+				<div class="mat blue" onclick="setMaterial('blue', event)"></div>
+			</div>
+		</div>
+
+		<script src="./build/three.js"></script>
+
+		<script src="js/loaders/BinaryLoader.js"></script>
+
+		<script src="js/Detector.js"></script>
+		<script src="js/libs/stats.min.js"></script>
+
+		<script>
+
+			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+			var STATS_ENABLED = false;
+
+			var container, stats;
+
+			var camera, scene, renderer;
+
+			var m, mi;
+
+			var directionalLight, pointLight;
+
+			var mouseX = 0, mouseY = 0;
+
+			var windowHalfX = window.innerWidth / 2;
+			var windowHalfY = window.innerHeight / 2;
+
+			var loader = new THREE.BinaryLoader();
+
+			init();
+			animate();
+      
+      var mlib;
+
+			function init() {
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				// CAMERAS
+
+				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 100000 );
+
+				// SCENE
+
+				var textureCube = new THREE.CubeTextureLoader()
+					.setPath( 'textures/cube/Bridge2/')
+					.load( [ 'posx.jpg', 'negx.jpg', 'posy.jpg', 'negy.jpg', 'posz.jpg', 'negz.jpg' ] );
+
+				scene = new THREE.Scene();
+				scene.background = textureCube;
+
+				// LIGHTS
+
+				var ambient = new THREE.AmbientLight( 0x050505 );
+				scene.add( ambient );
+
+				directionalLight = new THREE.DirectionalLight( 0xffffff, 2 );
+				directionalLight.position.set( 2, 1.2, 10 ).normalize();
+				scene.add( directionalLight );
+
+				directionalLight = new THREE.DirectionalLight( 0xffffff, 1 );
+				directionalLight.position.set( -2, 1.2, -10 ).normalize();
+				scene.add( directionalLight );
+
+				pointLight = new THREE.PointLight( 0xffaa00, 2 );
+				pointLight.position.set( 2000, 1200, 10000 );
+				scene.add( pointLight );
+
+				//
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.setFaceCulling( THREE.CullFaceNone );
+
+				container.appendChild( renderer.domElement );
+
+				if ( STATS_ENABLED ) {
+
+					stats = new Stats();
+					container.appendChild( stats.dom );
+
+				}
+
+				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+
+				// common materials
+
+			  mlib = {
+
+				"orange": 	new THREE.MeshLambertMaterial( { color: 0xff6600, envMap: textureCube, combine: THREE.MixOperation, reflectivity: 0.3 } ),
+				"blue": 	new THREE.MeshLambertMaterial( { color: 0x001133, envMap: textureCube, combine: THREE.MixOperation, reflectivity: 0.3 } ),
+				"black": 	new THREE.MeshLambertMaterial( { color: 0x000000, envMap: textureCube, combine: THREE.MixOperation, reflectivity: 0.15 } ),
+
+				};
+
+				createScene();
+				window.addEventListener( 'resize', onWindowResize, false );
+
+			}
+
+			function onWindowResize() {
+
+				windowHalfX = window.innerWidth / 2;
+				windowHalfY = window.innerHeight / 2;
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function $( id ) { return document.getElementById( id ) }
+      
+      var mesh;
+
+      var setMaterial = function(which, e){
+      	mesh.material = mlib[which];
+      	document.querySelectorAll('.mat').forEach(function(el){
+      		el.className = el.className.replace('active','')
+      	})
+      	e.target.className = 'mat active '+which;
+      };
+
+			function createScene() {
+
+				var textureCube = new THREE.CubeTextureLoader()
+					.setPath( 'textures/cube/Bridge2/')
+					.load( [ 'posx.jpg', 'negx.jpg', 'posy.jpg', 'negy.jpg', 'posz.jpg', 'negz.jpg' ] );
+				var material = mlib['orange']
+
+				var geometry = new THREE.SphereGeometry(150, 32, 32);
+				mesh = new THREE.Mesh( geometry, material );
+
+				scene.add( mesh );
+
+			}
+
+			function onDocumentMouseMove(event) {
+
+				mouseY = ( event.clientY - window.innerHeight );
+
+			}
+
+			function animate() {
+				requestAnimationFrame( animate );
+				render();
+			}
+
+			function render() {
+
+				var timer = -0.0002 * Date.now();
+
+				camera.position.x = 1000 * Math.cos( timer );
+				camera.position.y += ( - mouseY - camera.position.y ) * .05;
+				camera.position.z = 1000 * Math.sin( timer );
+
+				camera.lookAt( scene.position );
+
+				renderer.render( scene, camera );
+
+				if ( STATS_ENABLED ) stats.update();
+
+			}
+
+		</script>
+
+	</body>
+</html>
