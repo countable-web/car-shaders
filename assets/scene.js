@@ -17,7 +17,7 @@ function getMaterial(color) {
         },
         paintColor2: {
             type: "c",
-            value: new THREE.Color(0x888888)
+            value: new THREE.Color(0x444444)
         },
         paintColor3: {
             type: "c",
